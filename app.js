@@ -1,144 +1,96 @@
 const readline = require("readline");
 
 const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout
+  input: process.stdin,
+  output: process.stdout
 });
 
-let people = [];
+const people = [];
 
 function ask(question) {
-    return new Promise((resolve) => {
-        rl.question(question, resolve);
-    });
+  return new Promise(resolve =>
+    rl.question(question, answer => resolve(answer.trim()))
+  );
 }
 
-async function enterPeople() {
-    console.log("\n=== Enter Data for 10 People ===\n");
+async function addPeople() {
+  while (people.length < 10) {
+    console.log(`\nPerson ${people.length + 1} of 10`);
 
-    for (let i = 0; i < 10; i++) {
-        console.log(`Person ${i + 1}`);
+    const id = await ask("ID: ");
 
-        const id = await ask("ID: ");
-        const firstName = await ask("First Name: ");
-        const lastName = await ask("Last Name: ");
-        const age = await ask("Age: ");
-        const city = await ask("City: ");
-
-        people.push({
-            id,
-            firstName,
-            lastName,
-            age,
-            city
-        });
-
-        console.log("-------------------");
+    if (!id || people.some(p => p.id === id)) {
+      console.log("ID must be unique.");
+      continue;
     }
 
-    menu();
-}
+    const firstName = await ask("First name: ");
+    const lastName = await ask("Last name: ");
+    const age = Number(await ask("Age: "));
+    const city = await ask("City: ");
 
-function displayAllPeople() {
-    if (people.length === 0) {
-        console.log("No people found.");
-        return;
+    if (!firstName || !lastName || !city ||
+        !Number.isInteger(age) || age <= 0) {
+      console.log("Invalid data. Try again.");
+      continue;
     }
 
-    console.log("\n=== All People ===");
-    console.table(people);
-}
-
-async function displaySpecificPerson() {
-    const id = await ask("Enter ID: ");
-
-    const person = people.find(p => p.id === id);
-
-    if (person) {
-        console.table([person]);
-    } else {
-        console.log("Person not found.");
-    }
-}
-
-async function deleteSpecificPerson() {
-    const id = await ask("Enter ID to delete: ");
-
-    const index = people.findIndex(p => p.id === id);
-
-    if (index !== -1) {
-        people.splice(index, 1);
-        console.log("Person deleted successfully.");
-    } else {
-        console.log("Person not found.");
-    }
-}
-
-function deleteAllPeople() {
-    people = [];
-    console.log("All people deleted successfully.");
-}
-
-function displayFullNamesAndCities() {
-    if (people.length === 0) {
-        console.log("No people found.");
-        return;
-    }
-
-    console.log("\n=== Full Names and Cities ===");
-
-    people.forEach(person => {
-        console.log(
-            `Full Name: ${person.firstName} ${person.lastName} | City: ${person.city}`
-        );
-    });
+    people.push({ id, firstName, lastName, age, city });
+    console.log("Person added!");
+  }
 }
 
 async function menu() {
-    console.log(`
-======== MENU ========
-1. View All People
-2. View Specific Person
-3. Delete Specific Person
-4. Delete All People
-5. View Full Name and City
-6. Exit
-======================
-`);
+  while (true) {
+    console.log("\n--- PEOPLE MENU ---");
+    console.log("1. Enter 10 people");
+    console.log("2. View all people");
+    console.log("3. View specific person");
+    console.log("4. Delete all people");
+    console.log("5. Delete specific person");
+    console.log("6. View full names and cities");
+    console.log("7. Exit");
 
-    const choice = await ask("Choose an option: ");
+    const choice = await ask("Choose: ");
 
-    switch (choice) {
-        case "1":
-            displayAllPeople();
-            break;
+    if (choice === "1") {
+      if (people.length === 10) {
+        console.log("Already have 10 people.");
+      } else {
+        await addPeople();
+      }
+    } else if (choice === "2") {
+      console.table(people);
+    } else if (choice === "3") {
+      const id = await ask("Enter ID: ");
+      const person = people.find(p => p.id === id);
+      console.log(person || "Person not found");
+    } else if (choice === "4") {
+      people.length = 0;
+      console.log("All people deleted.");
+    } else if (choice === "5") {
+      const id = await ask("Enter ID: ");
+      const index = people.findIndex(p => p.id === id);
 
-        case "2":
-            await displaySpecificPerson();
-            break;
-
-        case "3":
-            await deleteSpecificPerson();
-            break;
-
-        case "4":
-            deleteAllPeople();
-            break;
-
-        case "5":
-            displayFullNamesAndCities();
-            break;
-
-        case "6":
-            console.log("Goodbye!");
-            rl.close();
-            return;
-
-        default:
-            console.log("Invalid choice.");
+      if (index === -1) {
+        console.log("Person not found");
+      } else {
+        people.splice(index, 1);
+        console.log("Person deleted");
+      }
+    } else if (choice === "6") {
+      people.forEach(p => {
+        console.log(
+          `Full name: ${p.firstName} ${p.lastName}, City: ${p.city}`
+        );
+      });
+    } else if (choice === "7") {
+      rl.close();
+      break;
+    } else {
+      console.log("Invalid choice");
     }
-
-    menu();
+  }
 }
 
-enterPeople();
+menu();
